@@ -47,16 +47,18 @@ if file_menciones and file_scores:
         fig_dist.update_layout(height=200, margin=dict(t=10, b=10), yaxis_title="%", showlegend=False)
         st.plotly_chart(fig_dist, use_container_width=True)
 
-    # Rueda reputacional
+    # Rueda reputacional corregida
     st.subheader("🌐 Rueda de Reputación RepTrak")
-    colors = ["#F5A623", "#50E3C2", "#4A90E2", "#BD10E0", "#7ED321", "#F8E71C", "#D0021B"]
-    fig = go.Figure()
-    fig.add_trace(go.Sunburst(
-        labels=["Reputación Global"] + dimensiones,
-        parents=[""] + ["Reputación Global"] * len(dimensiones),
-        values=[global_score] + scores,
-        branchvalues="total",
-        marker=dict(colors=["#00C49F"] + colors),
+    labels = ["Reputación Global"] + dimensiones
+    parents = [""] + ["Reputación Global"] * len(dimensiones)
+    values = [sum(scores)] + scores
+    colors = ["#00C49F", "#F5A623", "#50E3C2", "#4A90E2", "#BD10E0", "#7ED321", "#F8E71C", "#D0021B"][:len(scores)+1]
+    fig = go.Figure(go.Sunburst(
+        labels=labels,
+        parents=parents,
+        values=values,
+        branchvalues="remainder",
+        marker=dict(colors=colors),
         hovertemplate='<b>%{label}</b><br>Score: %{value}<extra></extra>',
         textinfo="label+percent entry",
         insidetextorientation="radial"
@@ -64,7 +66,6 @@ if file_menciones and file_scores:
     fig.update_layout(
         margin=dict(t=10, l=10, r=10, b=10),
         height=500,
-        uniformtext=dict(minsize=12, mode='hide'),
         annotations=[
             dict(
                 text=f"<b>{global_score:.1f}</b><br><span style='font-size:14px'>{'Strong' if global_score >= 60 else 'Weak'}</span>",
@@ -79,35 +80,5 @@ if file_menciones and file_scores:
         ]
     )
     st.plotly_chart(fig, use_container_width=True)
-
-    # Menciones influyentes
-    col4, col5 = st.columns(2)
-    with col4:
-        st.subheader("🔝 Mención más positiva")
-        top_pos = df[df["s_i"] > 0].sort_values(by="Impact", ascending=False).head(1)
-        st.write(top_pos[["Date", "Title", "Snippet", "Sentiment"]])
-    with col5:
-        st.subheader("🔻 Mención más negativa")
-        top_neg = df[df["s_i"] < 0].sort_values(by="Impact", ascending=False).head(1)
-        st.write(top_neg[["Date", "Title", "Snippet", "Sentiment"]])
-
-    # Velas OHLC
-    st.subheader("📈 Velas Reputacionales")
-    fig_candle = go.Figure(go.Candlestick(
-        x=score_df["Fecha"],
-        open=score_df["Open"],
-        high=score_df["High"],
-        low=score_df["Low"],
-        close=score_df["Close"],
-        increasing_line_color="#00C49F",
-        decreasing_line_color="#FF6B6B"
-    ))
-    fig_candle.update_layout(xaxis_title="Fecha", yaxis_title="Global Score")
-    st.plotly_chart(fig_candle, use_container_width=True)
-
-    # Filtrado por fecha
-    st.subheader("💬 Menciones del día seleccionado")
-    fecha_sel = st.selectbox("Selecciona una fecha:", score_df["Fecha"].dt.date.unique())
-    st.dataframe(df[df["Date"].dt.date == fecha_sel][["Date", "Title", "Snippet", "Sentiment", "Impact"]])
 else:
     st.warning("Por favor, sube ambos archivos para iniciar el análisis.")
