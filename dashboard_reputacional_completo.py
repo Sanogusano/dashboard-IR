@@ -47,30 +47,36 @@ if file_menciones and file_scores:
         fig_dist.update_layout(height=200, margin=dict(t=10, b=10), yaxis_title="%", showlegend=False)
         st.plotly_chart(fig_dist, use_container_width=True)
 
-    # Rueda
+    # Rueda reputacional
     st.subheader("🌐 Rueda de Reputación RepTrak")
     colors = ["#F5A623", "#50E3C2", "#4A90E2", "#BD10E0", "#7ED321", "#F8E71C", "#D0021B"]
-    fig = go.Figure(go.Sunburst(
-        labels=["Reputación"] + dimensiones,
-        parents=[""] + ["Reputación"] * len(dimensiones),
-        values=[1] + [1]*len(dimensiones),
+    fig = go.Figure()
+    fig.add_trace(go.Sunburst(
+        labels=["Reputación Global"] + dimensiones,
+        parents=[""] + ["Reputación Global"] * len(dimensiones),
+        values=[global_score] + scores,
         branchvalues="total",
         marker=dict(colors=["#00C49F"] + colors),
-        hovertemplate='<b>%{label}</b><br>Score: %{customdata}<extra></extra>',
-        customdata=[f"{global_score:.1f}"] + [f"{s:.1f}" for s in scores],
-        textinfo="label",
-        insidetextorientation='radial'
+        hovertemplate='<b>%{label}</b><br>Score: %{value}<extra></extra>',
+        textinfo="label+percent entry",
+        insidetextorientation="radial"
     ))
-    fig.update_layout(margin=dict(t=10, l=10, r=10, b=10), height=500)
-    fig.add_annotation(
-        text=f"<b>{global_score:.1f}</b><br>{'Strong' if global_score >= 60 else 'Weak'}",
-        showarrow=False,
-        font=dict(size=20, color="white"),
-        align="center",
-        x=0.5, y=0.5, xanchor="center", yanchor="middle",
-        xref="paper", yref="paper",
-        bgcolor="#00C49F",
-        borderpad=4
+    fig.update_layout(
+        margin=dict(t=10, l=10, r=10, b=10),
+        height=500,
+        uniformtext=dict(minsize=12, mode='hide'),
+        annotations=[
+            dict(
+                text=f"<b>{global_score:.1f}</b><br><span style='font-size:14px'>{'Strong' if global_score >= 60 else 'Weak'}</span>",
+                showarrow=False,
+                font=dict(size=20, color="white"),
+                align="center",
+                x=0.5, y=0.5, xanchor="center", yanchor="middle",
+                xref="paper", yref="paper",
+                bgcolor="#00C49F",
+                borderpad=4
+            )
+        ]
     )
     st.plotly_chart(fig, use_container_width=True)
 
