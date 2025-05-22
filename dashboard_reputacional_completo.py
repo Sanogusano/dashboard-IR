@@ -27,15 +27,20 @@ if file_menciones and file_scores:
     sentiment_map = {"positive": 1, "neutral": 0, "negative": -1}
     df["s_i"] = df["Sentiment"].map(sentiment_map).fillna(0)
 
-    # Engagement combinado y normalizado
-    df["Engagement"] = df[[
+    # Engagement combinado y normalizado (robusto)
+    engagement_cols = [
         "Instagram Likes", "Instagram Comments", "Instagram Shares",
         "Tiktok Likes", "Tiktok Comments", "Tiktok Shares"
-    ]].fillna(0).sum(axis=1)
+    ]
+    engagement_cols = [col for col in engagement_cols if col in df.columns]
 
-    df["Engagement"] = df["Engagement"] / df["Engagement"].max()
+    if engagement_cols:
+        df["Engagement"] = df[engagement_cols].fillna(0).sum(axis=1)
+        df["Engagement"] = df["Engagement"] / df["Engagement"].max()
+    else:
+        df["Engagement"] = 1
 
-    # Influencia y fuente (si faltan columnas)
+    # Influencia y fuente
     if "Impact" in df.columns:
         df["inf_i"] = df["Impact"] / df["Impact"].max()
     else:
