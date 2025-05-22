@@ -75,21 +75,31 @@ if file_menciones and file_scores:
 
     st.markdown("---")
 
-    # Radar de dimensiones
-    radar_cols = [col for col in score_df.columns if col.startswith("Score_")]
-    radar_df = score_df[["Fecha"] + radar_cols].copy()
-    latest = radar_df.sort_values("Fecha").iloc[-1]
-    radar_data = pd.DataFrame({
-        "Dimensión": [col.replace("Score_", "") for col in radar_cols],
-        "Score": [latest[col] for col in radar_cols]
-    })
+    # Rueda reputacional estilo sunburst
+    st.subheader("🧭 Rueda de Reputación RepTrak")
+    dimensiones = [
+        "Productos/Servicios", "Innovación", "Lugar de trabajo",
+        "Gobernanza", "Ciudadanía", "Liderazgo", "Resultados financieros"
+    ]
+    colors = ["#F5A623", "#50E3C2", "#4A90E2", "#BD10E0", "#7ED321", "#F8E71C", "#D0021B"]
+    latest_row = score_df.sort_values("Fecha").iloc[-1]
+    scores = [latest_row.get(f"Score_{dim}", 50) for dim in dimensiones]
 
-    fig_radar = px.line_polar(radar_data, r="Score", theta="Dimensión", line_close=True,
-                              template="plotly_white", title="🧭 Reputación por Dimensión")
-    fig_radar.update_traces(fill='toself', line_color="#00C49F")
-    st.plotly_chart(fig_radar, use_container_width=True)
+    fig_sunburst = go.Figure(go.Sunburst(
+        labels=["Reputación Global"] + dimensiones,
+        parents=[""] + ["Reputación Global"] * len(dimensiones),
+        values=[sum(scores)] + scores,
+        branchvalues="total",
+        marker=dict(colors=["#00C49F"] + colors),
+        hovertemplate='<b>%{label}</b><br>Score: %{value}<extra></extra>',
+        textinfo="label+value",
+        insidetextorientation='radial'
+    ))
+    fig_sunburst.update_layout(margin=dict(t=10, l=10, r=10, b=10), height=500)
+    st.plotly_chart(fig_sunburst, use_container_width=True)
 
-    # Velas japonesas
+    st.subheader("📈 Evolución Reputacional (Velas OHLC)")
+    selected_date = st.selectbox("Selecciona una fecha para ver menciones:", score_df["Fecha"].dt.date.unique())
     fig_candle = go.Figure(data=[go.Candlestick(
         x=score_df["Fecha"],
         open=score_df["Open"],
@@ -99,13 +109,12 @@ if file_menciones and file_scores:
         increasing_line_color='#00C49F',
         decreasing_line_color='#FF6B6B'
     )])
-    fig_candle.update_layout(title="📈 Evolución Reputacional (Velas OHLC)",
-                             xaxis_title="Fecha", yaxis_title="GlobalScore")
+    fig_candle.update_layout(xaxis_title="Fecha", yaxis_title="GlobalScore")
     st.plotly_chart(fig_candle, use_container_width=True)
 
-    # Tabla de menciones
-    st.subheader("📋 Menciones filtrables")
-    with st.expander("Ver todas las menciones"):
-        st.dataframe(df[["Date", "Title", "Snippet", "Dimensión", "Sentiment", "Score_i"]])
+    # Menciones de la fecha seleccionada
+    st.subheader("💬 Menciones que afectan la fecha seleccionada")
+    menciones_dia = df[df["Date"].dt.date == selected_date]
+    st.dataframe(menciones_dia[["Date", "Title", "Snippet", "Dimensión", "Sentiment", "Score_i"]])
 else:
     st.info("Por favor, sube ambos archivos para iniciar el análisis.")
